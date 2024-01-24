@@ -1,10 +1,10 @@
-import { Schema, model } from 'mongoose';
+import DbModel from "./db-model.js";
+import db from '../db.js'
 
-const UserSchema = new Schema({
-  email: {type: String, unique: true, required: true},
-  password: {type: String, required: true},
-  isActivated: {type: Boolean, default: false},
-  activationLink: {type: String},
-})
+class UserModel extends DbModel{
+  constructor(){
+    super(db, 'users');
+  }
+}
 
-export default model('User', UserSchema);
+export default new UserModel();

@@ -1,8 +1,10 @@
-import { Schema, model } from 'mongoose';
+import DbModel from "./db-model.js";
+import db from '../db.js'
 
-const TokenSchema = new Schema({
-  user: {type: Schema.Types.ObjectId, ref: 'User'},
-  refreshToken: {type: String, required: true},
-})
+class TokenModel extends DbModel {
+  constructor() {
+    super(db, 'tokens');
+  }
+}
 
-export default model('Token', TokenSchema);
+export default new TokenModel();

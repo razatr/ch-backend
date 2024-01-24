@@ -1,22 +1,21 @@
-import UserModel from '../models/user-model.js';
+import userModel from '../models/user-model.js';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import mailService from '../service/mail-service.js';
 import tokenServise from './token-servise.js';
 import UserDto from '../dtos/user-dto.js'
 import ApiError from '../exceptions/api-error.js';
-import db from '../db.js'
 
 class UserService {
   async registration(email, password) {
-    const candidate = await db.query(`SELECT * FROM users where email = $1`, [email]).rows[0];
+    const candidate = await userModel.getOne({email});
     if (candidate) {
       throw ApiError.BadRequest(`Пользователь с таким почтовым адресом ${email} уже существует`);
     }
     const hashPassword = await bcrypt.hash(password, 3);
     const activationLink = uuidv4();
-    const user = await UserModel.create({email, password: hashPassword, activationLink});
-    await mailService.sendActivationMail(email, `${process.env.API_URL}/api/activate/${activationLink}`);
+    const user = await userModel.add({email, password: hashPassword, activationLink});
+    // await mailService.sendActivationMail(email, `${process.env.API_URL}/api/activate/${activationLink}`);
 
     const userDto = new UserDto(user);
     const tokens = tokenServise.generateTokens({...userDto});
@@ -29,18 +28,17 @@ class UserService {
   }
 
   async activate(activationLink) {
-    const user = await UserModel.findOne({activationLink});
+    const user = userModel.getOne({activationLink});
     if(!user){
       throw ApiError.BadRequest('Некорректная ссылка активации');
     }
-    user.isActivated = true;
-    await user.save();
+    await userModel.updade({isActivated: true}, {activationLink});
   }
 
   async login(email, password) {
-    const user = await UserModel.findOne({email});
+    const user = await userModel.getOne({email});
     if (!user) {
-      throw ApiError.BadRequest(`Пользователья с таким почтовым адресом ${email} не существует`);
+      throw ApiError.BadRequest(`Пользователя с таким почтовым адресом ${email} не существует`);
     }
 
     const isPassEquals = await bcrypt.compare(password, user.password);
@@ -72,7 +70,7 @@ class UserService {
     if(!userData || !tokenFromDb) {
       throw ApiError.UnautorizedError()
     }
-    const user = await UserModel.findById(userData.id);
+    const user = await userModel.getOne({id: userData.id});
     const userDto = new UserDto(user);
     const tokens = tokenServise.generateTokens({...userDto});
     await tokenServise.saveToken(userDto.id, tokens.refreshToken);
@@ -84,7 +82,7 @@ class UserService {
   }
 
   async getAllUsers() {
-    const users = await db.query(`SELECT * FROM users`).rows;
+    const users = await userModel.getAll();
     return users;
   }
 }

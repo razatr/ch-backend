@@ -1,6 +1,7 @@
 create TABLE users(
   id SERIAL PRIMARY KEY,
   email VARCHAR(255),
+  password VARCHAR(255),
   is_activated BOOLEAN,
   activation_link VARCHAR(255)
 );
