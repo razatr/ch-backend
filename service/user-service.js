@@ -14,7 +14,7 @@ class UserService {
     }
     const hashPassword = await bcrypt.hash(password, 3);
     const activationLink = uuidv4();
-    const user = await userModel.add({email, password: hashPassword, activationLink});
+    const user = await userModel.add({email, password: hashPassword, activationLink, registrationData: new Date()});
     // await mailService.sendActivationMail(email, `${process.env.API_URL}/api/activate/${activationLink}`);
 
     const userDto = new UserDto(user);
@@ -61,6 +61,13 @@ class UserService {
     return token
   }
 
+  async update(newUserData, refreshToken) {
+    const userData = await this.refresh(refreshToken);
+    userModel.update(newUserData, {userId: userData.user.userId})
+    const user = new UserDto(Object.assign(userData.user, newUserData));
+    return user
+  }
+
   async refresh(refreshToken) {
     if(!refreshToken) {
       throw ApiError.UnautorizedError();
@@ -70,7 +77,7 @@ class UserService {
     if(!userData || !tokenFromDb) {
       throw ApiError.UnautorizedError()
     }
-    const user = await userModel.getOne({id: userData.id});
+    const user = await userModel.getOne({userId: userData.userId});
     const userDto = new UserDto(user);
     const tokens = tokenServise.generateTokens({...userDto});
     await tokenServise.saveToken(userDto.id, tokens.refreshToken);

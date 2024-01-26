@@ -1,6 +1,7 @@
 import ApiError from "../exceptions/api-error.js";
 import userService from "../service/user-service.js";
 import { validationResult } from "express-validator";
+import UserDto from "../dtos/user-dto.js";
 
 class UserController {
   async registration(req, res, next) {
@@ -57,6 +58,17 @@ class UserController {
       const userData = await userService.refresh(refreshToken);
       res.cookie('refreshToken', userData.refreshToken, {maxAge: 30*24*60*60*1000, httpOnly: true});
       return res.json(userData);
+    } catch(e) {
+      next(e);
+    }
+  }
+
+  async update(req, res, next) {
+    try {
+      const { refreshToken } = req.cookies;
+      const newUserData = req.body;
+      const user = await userService.update(newUserData, refreshToken);
+      return res.json(user);
     } catch(e) {
       next(e);
     }

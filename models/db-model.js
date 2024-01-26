@@ -38,6 +38,10 @@ class DbModel {
     return Object.keys(parameters).map((param, i) => `${this.#camelToSnake(param)} = $${i + startPos}`).join(' ');
   }
   
+  #parametersToUpdateQuery(parameters, startPos = 1) {
+    return Object.keys(parameters).map((param, i) => `${this.#camelToSnake(param)} = $${i + startPos}`).join(', ');
+  }
+
   #parametersToInsertQuery(parameters) {
     return `(${Object.keys(parameters).map(this.#camelToSnake).join(' ,')}) values (${Object.keys(parameters).map((_, i) => `$${i + 1}`).join(' ,')})`;
   }
@@ -48,8 +52,6 @@ class DbModel {
   }
 
   async getOne(parameters) {
-    console.log(`SELECT * FROM ${this.#table} where ${this.#parametersToSelectQuery(parameters)}`);
-    console.log(Object.values(parameters));
     const res = await this.#db.query(`SELECT * FROM ${this.#table} where ${this.#parametersToSelectQuery(parameters)}`, 
     Object.values(parameters));
     return res.rows ? this.#snakeToCamel(res.rows[0]) : undefined;
@@ -67,10 +69,11 @@ class DbModel {
     return res.rows ? this.#snakeToCamel(res.rows[0]) : undefined;
   }
 
-  async update(parameters, searchParaneters) {
-    console.log('update');
-    const res = await this.#db.query(`UPDATE ${this.#table} set ${this.#parametersToSelectQuery(parameters)} where ${this.#parametersToSelectQuery(searchParaneters, Object.keys(parameters).length + 1)}`, 
-      Object.values({...parameters, ...searchParaneters}));
+  async update(parameters, searchParameters) {
+    console.log(`UPDATE ${this.#table} set ${this.#parametersToUpdateQuery(parameters)} where ${this.#parametersToSelectQuery(searchParameters, Object.keys(parameters).length + 1)}`);
+    console.log({...parameters, ...searchParameters});
+    const res = await this.#db.query(`UPDATE ${this.#table} set ${this.#parametersToUpdateQuery(parameters)} where ${this.#parametersToSelectQuery(searchParameters, Object.keys(parameters).length + 1)}`, 
+      Object.values({...parameters, ...searchParameters}));
     return res.rows ? this.#snakeToCamel(res.rows[0]) : undefined;
   }
 }
