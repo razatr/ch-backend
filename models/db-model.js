@@ -1,5 +1,3 @@
-import DbError from "../exceptions/db-error.js";
-
 class DbModel {
   #db;
   #table;
@@ -46,34 +44,44 @@ class DbModel {
     return `(${Object.keys(parameters).map(this.#camelToSnake).join(' ,')}) values (${Object.keys(parameters).map((_, i) => `$${i + 1}`).join(' ,')})`;
   }
 
+  async #safeQuery(query, parameters) {
+    try {
+      const res = await this.#db.query(query, parameters);
+      return res;
+    } catch(e) {
+      e.internalQuery = query;
+      e.table = this.#table;
+      throw e
+    }
+  }
+
   async getAll() {
-    const res = await this.#db.query(`SELECT * FROM ${this.#table}`);
+    const query = `SELECT * FROM ${this.#table}`;
+    const res = await this.#safeQuery(query);
     return res.rows ? res.rows.map(this.#snakeToCamel) : undefined;
   }
 
   async getOne(parameters) {
-    const res = await this.#db.query(`SELECT * FROM ${this.#table} where ${this.#parametersToSelectQuery(parameters)}`, 
-    Object.values(parameters));
+    const query = `SELECT * FROM ${this.#table} where ${this.#parametersToSelectQuery(parameters)}`;
+    const res = await this.#safeQuery(query, Object.values(parameters));
     return res.rows ? this.#snakeToCamel(res.rows[0]) : undefined;
   }
 
   async add(parameters) {
-    const res = await this.#db.query(`INSERT INTO ${this.#table} ${this.#parametersToInsertQuery(parameters)} RETURNING *`, 
-    Object.values(parameters));
+    const query = `INSERT INTO ${this.#table} ${this.#parametersToInsertQuery(parameters)} RETURNING *`;
+    const res = await this.#safeQuery(query, Object.values(parameters));
     return res.rows ? this.#snakeToCamel(res.rows[0]) : undefined;
   }
 
   async delete(parameters) {
-    const res = await this.#db.query(`DELETE FROM ${this.#table} where ${this.#parametersToSelectQuery(parameters)}`, 
-    Object.values(parameters));
+    const query = `DELETE FROM ${this.#table} where ${this.#parametersToSelectQuery(parameters)}`;
+    const res = await this.#safeQuery(query, Object.values(parameters));
     return res.rows ? this.#snakeToCamel(res.rows[0]) : undefined;
   }
 
   async update(parameters, searchParameters) {
-    console.log(`UPDATE ${this.#table} set ${this.#parametersToUpdateQuery(parameters)} where ${this.#parametersToSelectQuery(searchParameters, Object.keys(parameters).length + 1)}`);
-    console.log({...parameters, ...searchParameters});
-    const res = await this.#db.query(`UPDATE ${this.#table} set ${this.#parametersToUpdateQuery(parameters)} where ${this.#parametersToSelectQuery(searchParameters, Object.keys(parameters).length + 1)}`, 
-      Object.values({...parameters, ...searchParameters}));
+    const query = `UPDATE ${this.#table} set ${this.#parametersToUpdateQuery(parameters)} where ${this.#parametersToSelectQuery(searchParameters, Object.keys(parameters).length + 1)}`;
+    const res = await this.#safeQuery(query, Object.values({...parameters, ...searchParameters}));
     return res.rows ? this.#snakeToCamel(res.rows[0]) : undefined;
   }
 }
