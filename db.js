@@ -9,19 +9,4 @@ const pool = new Pool({
   database: "control_history_db"
 });
 
-pool.on('connect', (client) => {
-  client.on('notice', (notice) => {
-    console.log('Notice:', notice);
-  });
-
-  client.on('end', () => {
-    console.log('Client disconnected');
-  });
-
-  client.setTypeParser(1114, (stringValue) => {
-    const date = new Date(stringValue);
-    return date.getTime();
-  });
-});
-
 export default pool;

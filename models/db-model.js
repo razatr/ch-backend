@@ -49,15 +49,16 @@ class DbModel {
       const res = await this.#db.query(query, parameters);
       return res;
     } catch(e) {
+      console.log(parameters);
       e.internalQuery = query;
       e.table = this.#table;
       throw e
     }
   }
 
-  async getAll() {
-    const query = `SELECT * FROM ${this.#table}`;
-    const res = await this.#safeQuery(query);
+  async getAll(parameters = {}) {
+    const query = `SELECT * FROM ${this.#table}${Object.keys(parameters) !== 0 ? ` where ${this.#parametersToSelectQuery(parameters)}` : ''}`;
+    const res = await this.#safeQuery(query, Object.values(parameters));
     return res.rows ? res.rows.map(this.#snakeToCamel) : undefined;
   }
 
