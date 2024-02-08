@@ -9,4 +9,11 @@ const pool = new Pool({
   database: "control_history_db"
 });
 
+pool.on('connect', (client) => {
+  client.setTypeParser(1114, (stringValue) => {
+    const date = new Date(stringValue);
+    return date.toISOString().slice(0, 10);
+  });
+});
+
 export default pool;

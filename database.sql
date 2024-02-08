@@ -39,6 +39,7 @@ create TABLE food(
   calories REAL NOT NULL,
   protein REAL NOT NULL,
   fats REAL NOT NULL,
+  carbs REAL NOT NULL,
   vitamins_id INTEGER,
   amino_acids_id INTEGER,
   FOREIGN KEY (vitamins_id) REFERENCES vitamins (vitamins_id),
@@ -59,3 +60,25 @@ create TABLE vitamins(
   c REAL,
   d REAL
 );
+
+INSERT INTO food (name, calories, proteins, fats, carbs)
+VALUES ('banana', 96, 1.5, 0.5, 21);
+
+ALTER TABLE food
+RENAME COLUMN protein TO proteins;
+
+ALTER TABLE food
+ADD COLUMN carbs REAL NOT NULL;
+
+DELETE FROM food
+WHERE food_id = 2;
+
+INSERT INTO food_history (food_id, user_id, time, state, comment, weight)
+VALUES (3, 4, timestamp '2024-02-06 15:00:00', 'eaten', 'Было вкусно', 150);
+
+ALTER TABLE food_history
+ALTER COLUMN time TYPE timestamp;
+
+UPDATE food_history
+SET food_id = 1
+WHERE food_history_id = 3;

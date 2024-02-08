@@ -13,7 +13,7 @@ class DbModel {
     }
   
     if (Array.isArray(obj)) {
-      return obj.map(snakeToCamel);
+      return obj.map(this.#snakeToCamel);
     }
   
     const camelObj = {};
@@ -49,7 +49,6 @@ class DbModel {
       const res = await this.#db.query(query, parameters);
       return res;
     } catch(e) {
-      console.log(parameters);
       e.internalQuery = query;
       e.table = this.#table;
       throw e
@@ -59,7 +58,7 @@ class DbModel {
   async getAll(parameters = {}) {
     const query = `SELECT * FROM ${this.#table}${Object.keys(parameters) !== 0 ? ` where ${this.#parametersToSelectQuery(parameters)}` : ''}`;
     const res = await this.#safeQuery(query, Object.values(parameters));
-    return res.rows ? res.rows.map(this.#snakeToCamel) : undefined;
+    return res.rows ? res.rows.map((obj) => this.#snakeToCamel(obj)) : undefined;
   }
 
   async getOne(parameters) {
